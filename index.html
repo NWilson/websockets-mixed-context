@@ -16,14 +16,14 @@
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
-          <a id="forkme_banner" href="https://github.com/NWilson/websockets-mixed-context">View on GitHub</a>
+          <a id="forkme_banner" href="https://github.com/NWilson/websockets-mixed-content">View on GitHub</a>
 
           <h1 id="project_title">websockets-mixed-content</h1>
           <h2 id="project_tagline">Please, don’t treat secure WebSocket subprotocols as mixed content</h2>
 
             <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/NWilson/websockets-mixed-context/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/NWilson/websockets-mixed-context/tarball/master">Download this project as a tar.gz file</a>
+              <a class="zip_download_link" href="https://github.com/NWilson/websockets-mixed-content/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/NWilson/websockets-mixed-content/tarball/master">Download this project as a tar.gz file</a>
             </section>
         </header>
     </div>
@@ -72,12 +72,13 @@
 <p>If <em>secure</em> is false and <em>protocols</em> is an empty array or includes an insecure protocol, but the origin of the entry script has a scheme component that is itself a secure protocol, e.g. HTTPS, then throw a <code>SecurityError</code> exception and abort these steps.</p>
 </blockquote>
 
-<p>The notion of ‘insecure protocol’ must be defined. Protocols which include their own encryption and integrity control need not be encapsulated by TLS to match the security of the containing page. Browsers could either:
-1. Extend the WebSocket API to allow a webapp to declare that an unknown subprotocol is ‘secure’. For example, the elements in the <em>protocol</em> array could be taken to be either strings, or an object with <code>string name</code> and <code>bool isSecure</code> attributes.
-1. Simply regard any explicit WebSocket subprotocol as secure. Use of subprotocols is not widespread at all at the moment, and this may be an acceptable starting point. (The mixed-content checks are ultimately advisory and are a second-layer of protection which don’t confer security by themselves, they just break sites that are doing something dodgy. If site admins could be trusted to be virtuous, mixed-content protection wouldn’t be needed.)
-1. Include a configuration parameter with some sensible initial values. Getting support for new protocols would be a big pain though and an annoying barrier to entry.</p>
+<p>The notion of ‘insecure protocol’ must be defined. Protocols which include their own encryption and integrity control need not be encapsulated by TLS to match the security of the containing page. Browsers could either:</p>
 
-<p>Finally, the section 10.3.3 "Feedback from the protocol" needs to be updated:</p>
+<ol>
+<li>Extend the WebSocket API to allow a webapp to declare that an unknown subprotocol is ‘secure’. For example, the elements in the <em>protocol</em> array could be taken to be either strings, or an object with <code>string name</code> and <code>bool isSecure</code> attributes.</li>
+<li>Simply regard any explicit WebSocket subprotocol as secure. Use of subprotocols is not widespread at all at the moment, and this may be an acceptable starting point. (The mixed-content checks are ultimately advisory and are a second-layer of protection which don’t confer security by themselves, they just break sites that are doing something dodgy. If site admins could be trusted to be virtuous, mixed-content protection wouldn’t be needed.)</li>
+<li>Include a configuration parameter with some sensible initial values. Getting support for new protocols would be a big pain though and an annoying barrier to entry.</li>
+</ol><p>Finally, the section 10.3.3 "Feedback from the protocol" needs to be updated:</p>
 
 <blockquote>
 <ol>
