@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="websockets-mixed-content : A spec for altering WebSockets mixed-content behaviour to work for secure protocols" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>websockets-mixed-content</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/NWilson/cors-mixed-context">View on GitHub</a>
+
+          <h1 id="project_title">websockets-mixed-content</h1>
+          <h2 id="project_tagline">A spec for altering WebSockets mixed-content behaviour to work for secure protocols</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/NWilson/cors-mixed-context/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/NWilson/cors-mixed-context/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="goal" class="anchor" href="#goal"><span class="octicon octicon-link"></span></a>Goal</h1>
+
+<p>Currently, the mixed-content restrictions in Firefox and the WebSocket API spec [WS-API] prevent use of insecure <code>ws://</code> URLs in webapps served over HTTPS. This is a problem, because the protocol used over the WebSocket connection may include a suitable method for ensuring confidentiality and integrity of the data, so the restriction is tighter than that actually required for security.</p>
+
+<p>This document justifies loosening the restriction in browsers, for suitable WebSocket subprotocols.</p>
+
+<h1>
+<a name="use-cases" class="anchor" href="#use-cases"><span class="octicon octicon-link"></span></a>Use cases</h1>
+
+<p>A webapp must be securely served: a user should not ever have to type a password into a page which was served over HTTP insecurely. Arbitrary JavaScript could have been injected to skim the user's input and activity.</p>
+
+<p>A webapp for SSH or VNC provides a core example: the webapp has to be able to make peer-to-peer connections to other machines, which do not have centrally-issued identities. Most or all of the readers of this document will be users who commonly connect to SSH servers which do not have a globally-registered DNS name (eg named only on a private subnet), and these servers are troublesome to provision with certificates that are recognised by a browser's CA system. Therefore, using TLS for the connection is not straightforward, let alone the fact that it is redundant because the protocol does its own management of identities and encryption. (A JavaScript client can implement an encrypted protocol over a WebSocket connection through the WebCrypto API.)</p>
+
+<p>Providing a VNC or SSH client in the browser really needs a way to allow access selectively to <code>ws://</code> connections from the HTTPS-served page.</p>
+
+<h1>
+<a name="is-a-websocket-connection-passive-or-active-content" class="anchor" href="#is-a-websocket-connection-passive-or-active-content"><span class="octicon octicon-link"></span></a>Is a WebSocket connection 'passive' or 'active' content?</h1>
+
+<p>Browsers have a notion of active and passive content - content which can perform an action to affect multiple elements across a page, or has a purely passive role. A browser executes the contents of resources loaded by <code>&lt;style&gt;</code> or <code>&lt;script&gt;</code> tags, so these are clearly active, but it safely parses and displays a resource specified by an <code>&lt;img&gt;</code> tag. Classifying WebSockets and XHR is difficult, because strictly speaking they're neither active nor passive, but can be used as either.</p>
+
+<p>For safety, browsers classify XHR as active, because it is overwhelmingly common for a document to be returned and then inserted into the page. Historically, Firefox has seen WebSockets as active, but Chrome has not.</p>
+
+<p>The recommendation of this document is to sidestep this debate by simply refining the notion of 'mixed-content' for WebSocket connections to take into account the WebSocket subprotocol. If a connection is deemed not to be mixed, then it doesn't matter whether it's active or passive.</p>
+
+<h1>
+<a name="the-recommendation" class="anchor" href="#the-recommendation"><span class="octicon octicon-link"></span></a>The recommendation</h1>
+
+<p>The WebSocket API currently includes this requirement:</p>
+
+<blockquote>
+<p>If <em>secure</em> is false but the origin of the entry script has a scheme component that is itself a secure protocol, e.g. HTTPS, then throw a <code>SecurityError</code> exception and abort these steps.
+<a href="http://www.whatwg.org/specs/web-apps/current-work/multipage/network.html#the-websocket-interface"> HTML, 10.3.2 The WebSocket interface </a></p>
+</blockquote>
+
+<p>I suggest altering this to place step 4 above 2 (normalising the <em>protocols</em> argument) and altering step 2 as follows:</p>
+
+<blockquote>
+<p>If <em>secure</em> is false and <em>protocols</em> is an empty array or includes an insecure protocol, but the origin of the entry script has a scheme component that is itself a secure protocol, e.g. HTTPS, then throw a <code>SecurityError</code> exception and abort these steps.</p>
+</blockquote>
+
+<p>The notion of 'insecure protocol' must be defined. Protocols which include their own encryption and integrity control need not be encapsulated by TLS to match the security of the containing page. Browsers could either:
+1. Extend the WebSocket API to allow a webapp to declare that an unknown subprotocol is 'secure'. For example, the elements in the <em>protocol</em> array could be taken to be either strings, or an object with <code>string name</code> and <code>bool isSecure</code> attributes.
+1. Simply regard any explicit WebSocket subprotocol as secure. Use of subprotocols is not widespread at all at the moment, and this may be an acceptable starting point. (The mixed-content checks are ultimately advisory and are a second-layer of protection which don't confer security by themselves, they just break sites that are doing something dodgy. If site admins could be trusted to be virtuous, mixed-content protection wouldn't be needed.)
+1. Include a configuration parameter with some sensible initial values. Getting support for new protocols would be a big pain though and an annoying barrier to entry.</p>
+
+<p>Finally, the section 10.3.3 "Feedback from the protocol" needs to be updated:</p>
+
+<blockquote>
+<ol>
+<li>Change the <em>protocol</em> attribute's value to the subprotocol in use, if is not the null value. If it is the null value and <em>secure</em> is false but the origin's scheme is a secure protocol, then:
+
+<ol>
+<li>Change the readyState attribute's value to CLOSED (3).</li>
+<li>Close the WebSocket connection.</li>
+<li>Fire a simple event named error at the WebSocket object.</li>
+</ol>
+</li>
+</ol>
+</blockquote>
+
+<h1>
+<a name="what-about-other-request-types" class="anchor" href="#what-about-other-request-types"><span class="octicon octicon-link"></span></a>What about other request types?</h1>
+
+<p>The same argument applies to XHR and Events, but these are not as important as getting WebSockets to work.</p>
+
+<p>For example, it's possible that content served as an XHR response will be properly verified by the requesting page. The webapp's JavaScript could include a list of content hashes (served securely), then do some non-TLS XHR requests, and check that the result matches one of the hashes before using the response.</p>
+
+<p>These use-cases are unknown (or extremely rare) in the wild. WebSockets is the most general protocol, in that any application of XHR requests or Server-Sent Events could also be done with WebSockets, so it's not high priority to do something too general which includes XHR and Events as well.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">websockets-mixed-content maintained by <a href="https://github.com/NWilson">NWilson</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
