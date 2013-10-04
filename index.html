@@ -16,14 +16,14 @@
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
-          <a id="forkme_banner" href="https://github.com/NWilson/websockets-mixed-content">View on GitHub</a>
+          <a id="forkme_banner" href="https://github.com/NWilson/websockets-mixed-context">View on GitHub</a>
 
           <h1 id="project_title">websockets-mixed-content</h1>
           <h2 id="project_tagline">Please, don’t treat secure WebSocket subprotocols as mixed content</h2>
 
             <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/NWilson/websockets-mixed-content/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/NWilson/websockets-mixed-content/tarball/master">Download this project as a tar.gz file</a>
+              <a class="zip_download_link" href="https://github.com/NWilson/websockets-mixed-context/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/NWilson/websockets-mixed-context/tarball/master">Download this project as a tar.gz file</a>
             </section>
         </header>
     </div>
@@ -101,6 +101,17 @@
 <p>For example, it’s possible that content served as an XHR response will be properly verified by the requesting page. The webapp’s JavaScript could include a list of content hashes (served securely), then do some non-TLS XHR requests, and check that the result matches one of the hashes before using the response.</p>
 
 <p>These use-cases are unknown (or extremely rare) in the wild. WebSockets is the most general protocol, in that any application of XHR requests or Server-Sent Events could also be done with WebSockets, so it’s not high priority to do something too general which includes XHR and Events as well.</p>
+
+<h1>
+<a name="other-possibilities" class="anchor" href="#other-possibilities"><span class="octicon octicon-link"></span></a>Other possibilities</h1>
+
+<p>I was initially looking for some sort of generic solution that works for XHR (and SS-Events), and I wrote a few Firefox patches along different lines. I didn’t post them though because I was pretty unconfident they’d be accepted. The idea of a generic solution is to provide a way for a resource to say that it isn't actually mixed: suppose a non-TLS WebSocket or XHR connection is made. The browser could send an additional header (<code>Access-Control-Request-Protocol</code>) and get back an additional header (<code>Access-Control-Protocol: encrypted</code>). If the response has the right header, then the browser knows that the JavaScript is doing the encryption. The browser can't guarantee it’s encrypted, but we've made enough hurdles here to get the mixed content heuristic working well enough.</p>
+
+<p>(Remember: mixed content detection is a heuristic! It’s there to make it hard for site admins to write bad sites by breaking sites when they try and do silly things, like mixed content. The blocker doesn’t make a site secure though — that's achieved through actually using TLS everywhere, and the admin can do that without any mixed-content blocking from the browser. It’s just there to create a secure ecosystem.)</p>
+
+<p>I had a draft of a spec and an implementation too that looked a bit like CSP (per-origin protection) rather than CORS (per-resource).</p>
+
+<p>Ultimately, those proposals just look too ugly when speced out to be convincing. I think it’s OK to ditch XHR and Events just because they’re a subcase of WebSockets really, so using the WebSockets subprotocols to get the right behaviour is sufficient.</p>
       </section>
     </div>
 
